@@ -995,8 +995,17 @@ func newLauncher(mpiJob *kubeflow.MPIJob, kubectlDeliveryImage string) *batchv1.
 			Value: fmt.Sprintf("%s/%s", configMountPath, hostfileName),
 		})
 	// Not assign any resource limits and requests to launcher pod
-	container.Resources.Limits = nil
-	container.Resources.Requests = nil
+	if mpiJob.Spec.LauncherResourceLimit {
+		if container.Resources.Limits != nil {
+			delete(container.Resources.Limits, gpuResourceName)
+		}
+		if container.Resources.Requests != nil {
+			delete(container.Resources.Requests, gpuResourceName)
+		}
+	} else {
+		container.Resources.Limits = nil
+		container.Resources.Requests = nil
+	}
 
 	// determine if run the launcher on the master node
 	if mpiJob.Spec.LauncherOnMaster {

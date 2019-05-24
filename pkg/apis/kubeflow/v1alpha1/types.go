@@ -48,6 +48,11 @@ type MPIJobSpec struct {
 	// +optional
 	LauncherOnMaster bool `json:"launcherOnMaster,omitempty"`
 
+	// Limit resource for launcher
+	// Optional: Default to false
+	// +optional
+	LauncherResourceLimit bool `json:"launcherResourceLimit,omitempty"`
+
 	// Optional number of retries before marking this job failed.
 	// Defaults to 6
 	// +optional
