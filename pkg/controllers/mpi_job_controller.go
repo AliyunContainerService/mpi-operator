@@ -983,6 +983,10 @@ func newLauncher(mpiJob *kubeflow.MPIJob, kubectlDeliveryImage string) *batchv1.
 				MountPath: kubectlMountPath,
 			},
 		},
+		Resources: corev1.ResourceRequirements{
+			Requests: mpiJob.Spec.LauncherResources.Requests,
+			Limits:   mpiJob.Spec.LauncherResources.Limits,
+		},
 	})
 	container := podSpec.Spec.Containers[0]
 	container.Env = append(container.Env,
