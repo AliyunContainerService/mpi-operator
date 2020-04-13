@@ -1002,6 +1002,23 @@ func newLauncher(mpiJob *kubeflow.MPIJob, kubectlDeliveryImage string) *batchv1.
 	container.Resources.Limits = mpiJob.Spec.LauncherResources.Limits
 	container.Resources.Requests = mpiJob.Spec.LauncherResources.Requests
 
+	// clean Volumes and VolumeMounts if not mounts on the launcher.
+	if !mpiJob.Spec.MountsOnLauncher {
+		volumeNames := make(map[string]string)
+		for k, volume := range podSpec.Spec.Volumes {
+			if volume.PersistentVolumeClaim != nil {
+				podSpec.Spec.Volumes = append(podSpec.Spec.Volumes[:k], podSpec.Spec.Volumes[k+1:]...)
+				volumeNames[volume.Name] = ""
+			}
+		}
+
+		for k, volumeMount := range container.VolumeMounts {
+			if _, ok := volumeNames[volumeMount.Name]; ok {
+				container.VolumeMounts = append(container.VolumeMounts[:k], container.VolumeMounts[k+1:]...)
+			}
+		}
+	}
+
 	// determine if run the launcher on the master node
 	if mpiJob.Spec.LauncherOnMaster {
 
