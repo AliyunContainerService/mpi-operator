@@ -509,9 +509,13 @@ func allocateGPUs(mpiJob *kubeflow.MPIJob, gpusPerNode int, done bool) (workerRe
 			}
 		}
 	}
+
 	if done {
-		workerReplicas = 0
+		if *mpiJob.Spec.CleanPodPolicy == kubeflow.CleanPodPolicyAll || *mpiJob.Spec.CleanPodPolicy == kubeflow.CleanPodPolicyRunning {
+			workerReplicas = 0
+		}
 	}
+
 	return workerReplicas, gpusPerWorker, err
 }
 
