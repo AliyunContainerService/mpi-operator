@@ -21,6 +21,11 @@ import (
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +resource:path=mpijob
+// +kubebuilder:object:root=true
+// +kubebuilder:printcolumn:JSONPath=`.metadata.creationTimestamp`,name="Age",type=date
+// +kubebuilder:printcolumn:JSONPath=`.status.launcherStatus`,name="State",type=string
+// +kubebuilder:subresource:status
 
 type MPIJob struct {
 	metav1.TypeMeta   `json:",inline"`

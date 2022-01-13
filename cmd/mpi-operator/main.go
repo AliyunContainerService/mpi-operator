@@ -16,6 +16,7 @@ package main
 
 import (
 	"flag"
+
 	"github.com/golang/glog"
 	kubeinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"

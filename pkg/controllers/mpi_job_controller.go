@@ -16,6 +16,7 @@ package controllers
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"time"
 
@@ -442,7 +443,7 @@ func (c *MPIJobController) syncHandler(key string) error {
 	// If the worker is ready, start the launcher.
 	workerReady := workerReplicas == 0 || int(worker.Status.ReadyReplicas) == workerReplicas
 	if workerReady && launcher == nil {
-		launcher, err = c.kubeClient.BatchV1().Jobs(namespace).Create(newLauncher(mpiJob, c.kubectlDeliveryImage))
+		launcher, err = c.kubeClient.BatchV1().Jobs(namespace).Create(context.TODO(), newLauncher(mpiJob, c.kubectlDeliveryImage), metav1.CreateOptions{})
 		if err != nil {
 			return err
 		}
@@ -538,7 +539,7 @@ func (c *MPIJobController) getOrCreateConfigMap(mpiJob *kubeflow.MPIJob, workerR
 	cm, err := c.configMapLister.ConfigMaps(mpiJob.Namespace).Get(mpiJob.Name + configSuffix)
 	// If the ConfigMap doesn't exist, we'll create it.
 	if errors.IsNotFound(err) {
-		cm, err = c.kubeClient.CoreV1().ConfigMaps(mpiJob.Namespace).Create(newConfigMap(mpiJob, workerReplicas, gpusPerWorker))
+		cm, err = c.kubeClient.CoreV1().ConfigMaps(mpiJob.Namespace).Create(context.TODO(), newConfigMap(mpiJob, workerReplicas, gpusPerWorker), metav1.CreateOptions{})
 	}
 	// If an error occurs during Get/Create, we'll requeue the item so we
 	// can attempt processing again later. This could have been caused by a
@@ -563,7 +564,7 @@ func (c *MPIJobController) getOrCreateLauncherServiceAccount(mpiJob *kubeflow.MP
 	sa, err := c.serviceAccountLister.ServiceAccounts(mpiJob.Namespace).Get(mpiJob.Name + launcherSuffix)
 	// If the ServiceAccount doesn't exist, we'll create it.
 	if errors.IsNotFound(err) {
-		sa, err = c.kubeClient.CoreV1().ServiceAccounts(mpiJob.Namespace).Create(newLauncherServiceAccount(mpiJob))
+		sa, err = c.kubeClient.CoreV1().ServiceAccounts(mpiJob.Namespace).Create(context.TODO(), newLauncherServiceAccount(mpiJob), metav1.CreateOptions{})
 	}
 	// If an error occurs during Get/Create, we'll requeue the item so we
 	// can attempt processing again later. This could have been caused by a
@@ -587,7 +588,7 @@ func (c *MPIJobController) getOrCreateLauncherRole(mpiJob *kubeflow.MPIJob, work
 	role, err := c.roleLister.Roles(mpiJob.Namespace).Get(mpiJob.Name + launcherSuffix)
 	// If the Role doesn't exist, we'll create it.
 	if errors.IsNotFound(err) {
-		role, err = c.kubeClient.RbacV1().Roles(mpiJob.Namespace).Create(newLauncherRole(mpiJob, workerReplicas))
+		role, err = c.kubeClient.RbacV1().Roles(mpiJob.Namespace).Create(context.TODO(), newLauncherRole(mpiJob, workerReplicas), metav1.CreateOptions{})
 	}
 	// If an error occurs during Get/Create, we'll requeue the item so we
 	// can attempt processing again later. This could have been caused by a
@@ -612,7 +613,7 @@ func (c *MPIJobController) getLauncherRoleBinding(mpiJob *kubeflow.MPIJob) (*rba
 	rb, err := c.roleBindingLister.RoleBindings(mpiJob.Namespace).Get(mpiJob.Name + launcherSuffix)
 	// If the RoleBinding doesn't exist, we'll create it.
 	if errors.IsNotFound(err) {
-		rb, err = c.kubeClient.RbacV1().RoleBindings(mpiJob.Namespace).Create(newLauncherRoleBinding(mpiJob))
+		rb, err = c.kubeClient.RbacV1().RoleBindings(mpiJob.Namespace).Create(context.TODO(), newLauncherRoleBinding(mpiJob), metav1.CreateOptions{})
 	}
 	// If an error occurs during Get/Create, we'll requeue the item so we
 	// can attempt processing again later. This could have been caused by a
@@ -637,7 +638,7 @@ func (c *MPIJobController) getOrCreateWorkerStatefulSet(mpiJob *kubeflow.MPIJob,
 	worker, err := c.statefulSetLister.StatefulSets(mpiJob.Namespace).Get(mpiJob.Name + workerSuffix)
 	// If the StatefulSet doesn't exist, we'll create it.
 	if errors.IsNotFound(err) && workerReplicas > 0 {
-		worker, err = c.kubeClient.AppsV1().StatefulSets(mpiJob.Namespace).Create(newWorker(mpiJob, int32(workerReplicas), gpusPerWorker))
+		worker, err = c.kubeClient.AppsV1().StatefulSets(mpiJob.Namespace).Create(context.TODO(), newWorker(mpiJob, int32(workerReplicas), gpusPerWorker), metav1.CreateOptions{})
 	}
 	// If an error occurs during Get/Create, we'll requeue the item so we
 	// can attempt processing again later. This could have been caused by a
@@ -656,7 +657,7 @@ func (c *MPIJobController) getOrCreateWorkerStatefulSet(mpiJob *kubeflow.MPIJob,
 
 	// If the worker is out of date, update the worker.
 	if worker != nil && int(*worker.Spec.Replicas) != workerReplicas {
-		worker, err = c.kubeClient.AppsV1().StatefulSets(mpiJob.Namespace).Update(newWorker(mpiJob, int32(workerReplicas), gpusPerWorker))
+		worker, err = c.kubeClient.AppsV1().StatefulSets(mpiJob.Namespace).Update(context.TODO(), newWorker(mpiJob, int32(workerReplicas), gpusPerWorker), metav1.UpdateOptions{})
 		// If an error occurs during Update, we'll requeue the item so we can
 		// attempt processing again later. This could have been caused by a
 		// temporary network failure, or any other transient reason.
@@ -689,7 +690,11 @@ func (c *MPIJobController) updateMPIJobStatus(mpiJob *kubeflow.MPIJob, launcher 
 	// update the Status block of the MPIJob resource. UpdateStatus will not
 	// allow changes to the Spec of the resource, which is ideal for ensuring
 	// nothing other than resource status has been updated.
-	_, err := c.kubeflowClient.KubeflowV1alpha1().MPIJobs(mpiJob.Namespace).Update(mpiJobCopy)
+	//_, err := c.kubeflowClient.KubeflowV1alpha1().MPIJobs(mpiJob.Namespace).Update(mpiJobCopy)
+	_, err := c.kubeflowClient.KubeflowV1alpha1().MPIJobs(mpiJob.Namespace).UpdateStatus(mpiJobCopy)
+	if err != nil {
+		glog.Errorf("failed to update status of mpijob %v,reason: %v", mpiJob.Namespace, err)
+	}
 	return err
 }
 
@@ -734,9 +739,9 @@ func (c *MPIJobController) handleObject(obj interface{}) {
 		if ownerRef.Kind != "MPIJob" {
 			return
 		}
-
 		mpiJob, err := c.mpiJobLister.MPIJobs(object.GetNamespace()).Get(ownerRef.Name)
 		if err != nil {
+			glog.Errorf("failed to get mpijob,reason: %v", err)
 			glog.V(4).Infof("ignoring orphaned object '%s' of mpi job '%s'", object.GetSelfLink(), ownerRef.Name)
 			return
 		}
