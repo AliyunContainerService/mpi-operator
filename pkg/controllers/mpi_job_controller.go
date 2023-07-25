@@ -93,6 +93,8 @@ const (
 
 	// LabelNodeRoleMaster specifies that a node is a master
 	LabelNodeRoleMaster = "node-role.kubernetes.io/master"
+
+	suspendInQueue = "scheduling.x-k8s.io/suspend"
 )
 
 // MPIJobController is the controller implementation for MPIJob resources.
@@ -405,6 +407,15 @@ func (c *MPIJobController) syncHandler(key string) error {
 	}
 	if err != nil {
 		return err
+	}
+
+	// Wait until queuing annotation is removed
+	if mpiJob.Annotations != nil {
+		if suspend, exist := mpiJob.Annotations[suspendInQueue]; exist && suspend == "true" {
+			infoMsg := fmt.Sprintf("Annotation %s is found, operator will not process until removed", suspendInQueue)
+			glog.Info(infoMsg)
+			return nil
+		}
 	}
 
 	// Get the launcher Job for this MPIJob.
