@@ -28,8 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	pruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	appsinformers "k8s.io/client-go/informers/apps/v1"
@@ -186,7 +184,7 @@ func NewMPIJobController(
 	mpiJobInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: controller.enqueueMPIJob,
 		UpdateFunc: func(old, new interface{}) {
-			job, err := MPIJobFromUnstructured(old)
+			job, err := MPIJobFromObject(old)
 			if err != nil {
 				return
 			}
@@ -1143,16 +1141,11 @@ func newLauncher(mpiJob *kubeflow.MPIJob, kubectlDeliveryImage string) *batchv1.
 	}
 }
 
-func MPIJobFromUnstructured(obj interface{}) (*kubeflow.MPIJob, error) {
-	un, ok := obj.(*metav1unstructured.Unstructured)
+func MPIJobFromObject(obj interface{}) (*kubeflow.MPIJob, error) {
+	job, ok := obj.(*kubeflow.MPIJob)
 	if !ok {
 		return nil, fmt.Errorf("failed to get MPIJob from key")
 	}
-	var job kubeflow.MPIJob
-	err := pruntime.DefaultUnstructuredConverter.FromUnstructured(un.Object, &job)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal the object to MPIJob")
-	}
 
-	return &job, nil
+	return job, nil
 }
