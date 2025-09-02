@@ -1,13 +1,23 @@
-FROM alpine:3.7 AS build
+ARG BASE_IMAGE=docker.io/library/alpine:3.22.0
 
-# Install kubectl.
-ENV K8S_VERSION v1.10.3
-RUN apk add --no-cache wget
-RUN wget -q https://storage.googleapis.com/kubernetes-release/release/${K8S_VERSION}/bin/linux/amd64/kubectl
-RUN chmod +x ./kubectl
-RUN mv ./kubectl /bin/kubectl
+FROM ${BASE_IMAGE} AS builder
 
-FROM alpine:3.7
-COPY --from=build /bin/kubectl /bin/kubectl
+ARG TARGETARCH
+
+ARG KUBECTL_VERSION=1.33.4
+
+WORKDIR /workspace
+
+RUN apk add --update --no-cache curl \
+    && curl -LO https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/${TARGETARCH}/kubectl \
+    && curl -LO https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/${TARGETARCH}/kubectl.sha256 \
+    && echo "$(cat kubectl.sha256) kubectl" | sha256sum -cs \
+    && chmod 0755 kubectl
+
+FROM ${BASE_IMAGE}
+
+COPY --from=builder /workspace/kubectl /usr/bin/kubectl
+
 COPY deliver_kubectl.sh .
+
 ENTRYPOINT ["./deliver_kubectl.sh"]
