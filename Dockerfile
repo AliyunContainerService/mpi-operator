@@ -1,4 +1,4 @@
-FROM golang:1.21.13-bullseye AS build
+FROM golang:1.24.6-bullseye AS build
 
 ADD . /go/src/github.com/kubeflow/mpi-operator
 WORKDIR /go/src/github.com/kubeflow/mpi-operator
